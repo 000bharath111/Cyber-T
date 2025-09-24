@@ -659,3 +659,27 @@
 ```
 
 ---
+## Result Images
+
+## GUI Mode Tool
+<p align="center">
+  <img src="Screenshot%202025-09-24%20133905.png" alt="Full Screen Image" style="width:100%; height:auto;" />
+</p>
+
+<br>
+<p align="center">
+  <img src="Screenshot%202025-09-24%20133918.png" alt="Full Screen Image" style="width:100%; height:auto;" />
+</p>
+
+<br>
+<p align="center">
+  <img src="Screenshot%202025-09-24%20133951.png" alt="Full Screen Image" style="width:100%; height:auto;" />
+</p>
+
+<br>
+
+## CLI Mode Tool 
+
+<p align="center">
+  <img src="Screenshot%202025-09-24%20134201.png" alt="Full Screen Image" style="width:100%; height:auto;" />
+</p>
