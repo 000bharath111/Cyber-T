@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json
-
 from datetime import datetime
 import os
 import sqlite3
@@ -45,19 +44,16 @@ except ImportError:
     WHOIS_AVAILABLE = False
 
 class ThreadLocalDB:
-    """Thread-local database connection manager for SQLite thread safety"""
     def __init__(self, db_path='cyber_t.db'):
         self.db_path = db_path
         self.local = threading.local()
     
     def get_connection(self):
-        """Get thread-local database connection"""
         if not hasattr(self.local, 'connection'):
             self.local.connection = sqlite3.connect(self.db_path, check_same_thread=False)
         return self.local.connection
     
     def close_all(self):
-        """Close all thread-local connections"""
         if hasattr(self.local, 'connection'):
             self.local.connection.close()
 
@@ -68,43 +64,33 @@ class CyberT:
         self.root.geometry("1200x800")
         self.root.configure(bg="#18191A")
         
-        # Initialize thread-local database manager
         self.db_manager = ThreadLocalDB()
         
-        # Initialize sound settings
         self.sound_enabled = True
         
-        # Initialize scanning progress tracking
         self.scan_progress_count = 0
         self.scan_total_count = 0
         
-        # Initialize sound throttling
         self.last_sound_time = 0
-        self.sound_throttle_ms = 100  # Minimum 100ms between sounds
+        self.sound_throttle_ms = 100  
         
-        # Initialize vulnerability analysis
         self.vulnerability_patterns = self._init_vulnerability_patterns()
         self.uploaded_files = []
         self.analysis_results = []
         
-        # Set window icon and styling
         self.setup_styling()
         
-        # Initialize database
         self.init_database()
         
-        # Initialize proxy state
         self.proxy_server = None
         self.proxy_running = False
         self.intercepted_requests = []
         self.intercepted_responses = []
         self.intercept_enabled = False
         
-        # Create main interface
         self.create_main_interface()
         
     def setup_styling(self):
-        """Setup custom styling for the application"""
         style = ttk.Style()
         style.theme_use('clam')
         
@@ -120,16 +106,12 @@ class CyberT:
         style.configure('TText', background='#2D2D2D', foreground='#FFFFFF', 
                        borderwidth=1, relief='solid')
         
-        # Create logo
         self.create_logo()
         
     def create_logo(self):
-        """Load the round logo from image.png"""
         try:
-            # Try to load the logo from image.png
             if os.path.exists('image.png'):
                 logo = Image.open('image.png')
-                # Resize to 40x40 if needed
                 if logo.size != (40, 40):
                     logo = logo.resize((40, 40), Image.Resampling.LANCZOS)
                 self.logo_image = ImageTk.PhotoImage(logo)
@@ -138,34 +120,25 @@ class CyberT:
             
     
     def create_fallback_logo(self):
-        """Create a fallback logo if image.png is not available"""
-        # Create a simple round logo using PIL
         logo_size = 40
         logo = Image.new('RGBA', (logo_size, logo_size), (0, 0, 0, 0))
         
-        # Draw a simple cyber-themed logo
         from PIL import ImageDraw
         draw = ImageDraw.Draw(logo)
         
-        # Draw outer circle
         draw.ellipse([2, 2, logo_size-2, logo_size-2], outline='#FF0000', width=2)
         
-        # Draw inner elements (cyber shield)
         center = logo_size // 2
         draw.polygon([(center, 8), (center-8, 16), (center-4, 24), 
                      (center+4, 24), (center+8, 16)], fill='#FF0000')
         
-        # Convert to PhotoImage
         self.logo_image = ImageTk.PhotoImage(logo)
         print("✅ Fallback logo created")
         
     def init_database(self):
-        """Initialize SQLite database for API tests"""
-        # Use thread-local connection for initialization
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         
-        # Create API tests table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS api_tests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -181,7 +154,6 @@ class CyberT:
             )
         ''')
         
-        # Create tickets table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS tickets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -198,7 +170,6 @@ class CyberT:
         conn.commit()
     
     def _init_vulnerability_patterns(self):
-        """Initialize vulnerability detection patterns"""
         return {
             'sql_injection': {
                 'patterns': [
@@ -373,45 +344,34 @@ class CyberT:
         }
     
     def play_sound(self, sound_type="start"):
-        """Play system sounds for different actions"""
         if not self.sound_enabled:
             return
             
         try:
             if sound_type == "start":
-                # Play enhanced start sound (higher frequency, longer duration)
                 winsound.Beep(1200, 300)
             elif sound_type == "complete":
-                # Play completion sound (success beep sequence)
                 winsound.Beep(1500, 200)
                 time.sleep(0.1)
                 winsound.Beep(1800, 200)
             elif sound_type == "error":
-                # Play error sound (low beep)
                 winsound.Beep(500, 500)
             elif sound_type == "scan_progress":
-                # Play progress sound (short beep)
                 winsound.Beep(800, 100)
             elif sound_type == "scan_success":
-                # Play success sound (higher pitch beep)
                 winsound.Beep(1000, 150)
         except Exception as e:
-            # Silently ignore sound errors to avoid breaking the app
             pass
     
     def _update_scan_progress(self):
-        """Update scan progress without sound to reduce lag"""
         if self.scan_total_count > 0:
             progress_percent = (self.scan_progress_count / self.scan_total_count) * 100
             self.scan_status_label.config(text=f"🔍 Scanning... {self.scan_progress_count}/{self.scan_total_count} ({progress_percent:.1f}%)")
         
     def create_main_interface(self):
-        """Create the main user interface"""
-        # Header with logo and title
         header_frame = ttk.Frame(self.root)
         header_frame.pack(fill='x', padx=10, pady=5)
         
-        # Logo and title
         logo_label = ttk.Label(header_frame, image=self.logo_image)
         logo_label.pack(side='left', padx=(0, 10))
         
@@ -424,7 +384,6 @@ class CyberT:
                                   font=('Arial', 10))
         subtitle_label.pack(side='left', padx=(10, 0))
         
-        # Community Support Section
         community_frame = ttk.Frame(header_frame)
         community_frame.pack(side='right', padx=10)
         
@@ -436,11 +395,9 @@ class CyberT:
                   command=self.open_cyber_chat, 
                   style='Accent.TButton').pack(side='right', padx=5)
         
-        # Main notebook for tabs
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Create tabs
         self.create_proxy_interceptor_tab()
         self.create_api_tester_tab()
         self.create_security_scanner_tab()
@@ -448,20 +405,16 @@ class CyberT:
         self.create_network_analysis_tab()
         self.create_dashboard_tab()
         
-        # Initialize scan results queue
         self.scan_results_queue = queue.Queue()
         self.scanning_active = False
         
     def create_proxy_interceptor_tab(self):
-        """Create the HTTP proxy interceptor tab"""
         proxy_frame = ttk.Frame(self.notebook)
         self.notebook.add(proxy_frame, text="🔄 Proxy Interceptor")
         
-        # Top panel - Proxy controls
         control_frame = ttk.LabelFrame(proxy_frame, text="Proxy Server Controls")
         control_frame.pack(fill='x', padx=10, pady=5)
         
-        # Proxy settings
         settings_frame = ttk.Frame(control_frame)
         settings_frame.pack(fill='x', pady=5)
         
@@ -470,7 +423,6 @@ class CyberT:
         port_entry = ttk.Entry(settings_frame, textvariable=self.proxy_port_var, width=10)
         port_entry.pack(side='left', padx=(0, 20))
         
-        # Intercept controls
         intercept_frame = ttk.Frame(control_frame)
         intercept_frame.pack(fill='x', pady=5)
         
@@ -482,7 +434,6 @@ class CyberT:
         ttk.Checkbutton(intercept_frame, text="Intercept Responses", 
                        variable=self.intercept_responses_var).pack(side='left', padx=(0, 20))
         
-        # Control buttons
         button_frame = ttk.Frame(control_frame)
         button_frame.pack(fill='x', pady=10)
         
@@ -500,12 +451,10 @@ class CyberT:
         ttk.Button(button_frame, text="📄 Export Traffic", 
                   command=self.export_traffic).pack(side='left')
         
-        # Status display
         self.proxy_status_label = ttk.Label(control_frame, text="Proxy Status: Stopped", 
                                            font=('Arial', 10, 'bold'))
         self.proxy_status_label.pack(pady=5)
         
-        # Vulnerability legend
         legend_frame = ttk.Frame(control_frame)
         legend_frame.pack(fill='x', pady=5)
         
@@ -514,7 +463,6 @@ class CyberT:
         legend_items_frame = ttk.Frame(legend_frame)
         legend_items_frame.pack(fill='x', pady=2)
         
-        # Create legend items with color coding
         legend_items = [
             ('🔴 HIGH', '#2D1B1B', '#FF6B6B'),
             ('🟡 MEDIUM', '#2D2B1B', '#FFD93D'),
@@ -527,19 +475,15 @@ class CyberT:
                                  bg=bg_color, fg=fg_color, font=('Arial', 8))
             legend_item.pack(side='left', padx=(0, 10))
         
-        # Main content area
         content_frame = ttk.Frame(proxy_frame)
         content_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Create notebook for intercepted traffic
         self.traffic_notebook = ttk.Notebook(content_frame)
         self.traffic_notebook.pack(fill='both', expand=True)
         
-        # Intercepted Requests tab
         requests_frame = ttk.Frame(self.traffic_notebook)
         self.traffic_notebook.add(requests_frame, text="📥 Intercepted Requests")
         
-        # Requests list
         requests_list_frame = ttk.Frame(requests_frame)
         requests_list_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
         
@@ -551,7 +495,6 @@ class CyberT:
         self.requests_listbox.pack(fill='both', expand=True)
         self.requests_listbox.bind('<<ListboxSelect>>', self.on_request_select)
         
-        # Request details
         request_details_frame = ttk.Frame(requests_frame)
         request_details_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
         
@@ -566,7 +509,6 @@ class CyberT:
         self.request_details_text.pack(side='left', fill='both', expand=True)
         request_scrollbar.pack(side='right', fill='y')
         
-        # Request action buttons
         request_actions_frame = ttk.Frame(request_details_frame)
         request_actions_frame.pack(fill='x', pady=5)
         
@@ -577,11 +519,9 @@ class CyberT:
         ttk.Button(request_actions_frame, text="❌ Drop", 
                   command=self.drop_request).pack(side='left')
         
-        # Intercepted Responses tab
         responses_frame = ttk.Frame(self.traffic_notebook)
         self.traffic_notebook.add(responses_frame, text="📤 Intercepted Responses")
         
-        # Responses list
         responses_list_frame = ttk.Frame(responses_frame)
         responses_list_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
         
@@ -593,7 +533,6 @@ class CyberT:
         self.responses_listbox.pack(fill='both', expand=True)
         self.responses_listbox.bind('<<ListboxSelect>>', self.on_response_select)
         
-        # Response details
         response_details_frame = ttk.Frame(responses_frame)
         response_details_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
         
@@ -608,7 +547,6 @@ class CyberT:
         self.response_details_text.pack(side='left', fill='both', expand=True)
         response_scrollbar.pack(side='right', fill='y')
         
-        # Response action buttons
         response_actions_frame = ttk.Frame(response_details_frame)
         response_actions_frame.pack(fill='x', pady=5)
         
@@ -620,52 +558,42 @@ class CyberT:
                   command=self.drop_response).pack(side='left')
         
     def analyze_request_vulnerability(self, request_data):
-        """Analyze request for potential vulnerabilities"""
         vulnerability_score = 0
         method = request_data.get('method', '').upper()
         url = request_data.get('url', '').lower()
         headers = request_data.get('headers', {})
         body = request_data.get('body', '').lower()
         
-        # Check for dangerous HTTP methods
         if method in ['PUT', 'DELETE', 'PATCH', 'TRACE']:
             vulnerability_score += 2
         
-        # Check for sensitive endpoints
         sensitive_paths = ['admin', 'login', 'api', 'config', 'backup', 'test', 'debug']
         for path in sensitive_paths:
             if path in url:
                 vulnerability_score += 1
         
-        # Check for SQL injection patterns in URL or body
         sql_patterns = ['union', 'select', 'insert', 'delete', 'drop', 'exec', 'script']
         for pattern in sql_patterns:
             if pattern in url or pattern in body:
                 vulnerability_score += 2
         
-        # Check for XSS patterns
         xss_patterns = ['<script', 'javascript:', 'onload=', 'onerror=', 'alert(']
         for pattern in xss_patterns:
             if pattern in url or pattern in body:
                 vulnerability_score += 2
         
-        # Check for path traversal
         if '../' in url or '..\\' in url:
             vulnerability_score += 3
         
-        # Check for missing security headers
         security_headers = ['x-frame-options', 'x-content-type-options', 'x-xss-protection']
         for header in security_headers:
             if header not in [h.lower() for h in headers.keys()]:
                 vulnerability_score += 1
-        
-        # Check for weak authentication
-        if 'authorization' in [h.lower() for h in headers.keys()]:
+                if 'authorization' in [h.lower() for h in headers.keys()]:
             auth_header = headers.get('Authorization', '')
             if 'basic' in auth_header.lower() and not auth_header.endswith('='):
                 vulnerability_score += 2
         
-        # Determine vulnerability level
         if vulnerability_score >= 5:
             return 'HIGH'
         elif vulnerability_score >= 3:
@@ -676,17 +604,14 @@ class CyberT:
             return 'NONE'
     
     def analyze_response_vulnerability(self, response_data):
-        """Analyze response for potential vulnerabilities"""
         vulnerability_score = 0
         status = response_data.get('status', 0)
         headers = response_data.get('headers', {})
         body = response_data.get('body', '').lower()
         
-        # Check for information disclosure in status codes
         if status in [500, 501, 502, 503, 504]:
             vulnerability_score += 1  # Server errors can reveal information
         
-        # Check for missing security headers
         security_headers = {
             'x-frame-options': 2,
             'x-content-type-options': 1,
@@ -699,27 +624,22 @@ class CyberT:
             if header not in [h.lower() for h in headers.keys()]:
                 vulnerability_score += score
         
-        # Check for sensitive information in response body
         sensitive_info = ['password', 'token', 'key', 'secret', 'api_key', 'database']
         for info in sensitive_info:
             if info in body:
                 vulnerability_score += 2
         
-        # Check for error messages that might reveal system information
         error_patterns = ['stack trace', 'exception', 'error in', 'warning:', 'notice:']
         for pattern in error_patterns:
             if pattern in body:
                 vulnerability_score += 1
         
-        # Check for debug information
         if 'debug' in body or 'development' in body:
             vulnerability_score += 2
         
-        # Check for directory listing
         if 'index of' in body or 'parent directory' in body:
             vulnerability_score += 3
         
-        # Determine vulnerability level
         if vulnerability_score >= 6:
             return 'HIGH'
         elif vulnerability_score >= 3:
@@ -730,7 +650,6 @@ class CyberT:
             return 'NONE'
     
     def get_vulnerability_indicator(self, level):
-        """Get vulnerability indicator icon"""
         indicators = {
             'HIGH': '🔴',    # Red circle
             'MEDIUM': '🟡',  # Yellow circle
@@ -740,7 +659,6 @@ class CyberT:
         return indicators.get(level, '⚪')
         
     def start_proxy_server(self):
-        """Start the HTTP proxy server"""
         try:
             port = int(self.proxy_port_var.get())
             self.proxy_server = ProxyServer(('localhost', port), ProxyHandler, self)
@@ -752,7 +670,6 @@ class CyberT:
             self.stop_proxy_btn.config(state='normal')
             self.proxy_status_label.config(text=f"Proxy Status: Running on port {port}")
             
-            # Play start sound for proxy
             self.play_sound("start")
             
             messagebox.showinfo("Success", f"Proxy server started on port {port}\n\n"
@@ -764,7 +681,6 @@ class CyberT:
             messagebox.showerror("Error", f"Failed to start proxy server: {str(e)}")
             
     def stop_proxy_server(self):
-        """Stop the HTTP proxy server"""
         try:
             if self.proxy_server:
                 self.proxy_server.shutdown()
@@ -775,28 +691,22 @@ class CyberT:
             self.stop_proxy_btn.config(state='disabled')
             self.proxy_status_label.config(text="Proxy Status: Stopped")
             
-            # Play completion sound for proxy stop
             self.play_sound("complete")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to stop proxy server: {str(e)}")
             
     def add_intercepted_request(self, request_data):
-        """Add intercepted request to the list with vulnerability analysis"""
         self.intercepted_requests.append(request_data)
         
-        # Analyze request for vulnerabilities
         vulnerability_level = self.analyze_request_vulnerability(request_data)
         
-        # Create display text with vulnerability indicator
         vuln_indicator = self.get_vulnerability_indicator(vulnerability_level)
         display_text = f"{vuln_indicator} {request_data.get('method', 'UNKNOWN')} {request_data.get('url', 'Unknown URL')}"
         
-        # Insert with appropriate color coding
         index = self.requests_listbox.size()
         self.requests_listbox.insert(tk.END, display_text)
         
-        # Apply color coding based on vulnerability level
         if vulnerability_level == 'HIGH':
             self.requests_listbox.itemconfig(index, {'bg': '#2D1B1B', 'fg': '#FF6B6B'})  # Dark red
         elif vulnerability_level == 'MEDIUM':
@@ -807,21 +717,16 @@ class CyberT:
             self.requests_listbox.itemconfig(index, {'bg': '#2D2D2D', 'fg': '#FFFFFF'})  # Default dark
         
     def add_intercepted_response(self, response_data):
-        """Add intercepted response to the list with vulnerability analysis"""
         self.intercepted_responses.append(response_data)
         
-        # Analyze response for vulnerabilities
         vulnerability_level = self.analyze_response_vulnerability(response_data)
         
-        # Create display text with vulnerability indicator
         vuln_indicator = self.get_vulnerability_indicator(vulnerability_level)
         display_text = f"{vuln_indicator} {response_data.get('status', 'Unknown')} {response_data.get('url', 'Unknown URL')}"
         
-        # Insert with appropriate color coding
         index = self.responses_listbox.size()
         self.responses_listbox.insert(tk.END, display_text)
         
-        # Apply color coding based on vulnerability level
         if vulnerability_level == 'HIGH':
             self.responses_listbox.itemconfig(index, {'bg': '#2D1B1B', 'fg': '#FF6B6B'})  # Dark red
         elif vulnerability_level == 'MEDIUM':
@@ -832,7 +737,6 @@ class CyberT:
             self.responses_listbox.itemconfig(index, {'bg': '#2D2D2D', 'fg': '#FFFFFF'})  # Default dark
         
     def on_request_select(self, event):
-        """Handle request selection"""
         selection = self.requests_listbox.curselection()
         if selection:
             index = selection[0]
@@ -841,7 +745,6 @@ class CyberT:
                 self.display_request_details(request_data)
                 
     def on_response_select(self, event):
-        """Handle response selection"""
         selection = self.responses_listbox.curselection()
         if selection:
             index = selection[0]
@@ -850,11 +753,8 @@ class CyberT:
                 self.display_response_details(response_data)
                 
     def display_request_details(self, request_data):
-        """Display detailed request information with vulnerability analysis"""
         self.request_details_text.delete(1.0, tk.END)
-        
-        # Analyze vulnerability
-        vulnerability_level = self.analyze_request_vulnerability(request_data)
+                vulnerability_level = self.analyze_request_vulnerability(request_data)
         vuln_indicator = self.get_vulnerability_indicator(vulnerability_level)
         
         details = []
@@ -877,12 +777,10 @@ class CyberT:
         details.append("-" * 20)
         details.append(request_data.get('body', 'No body'))
         
-        # Add vulnerability details
         details.append("")
         details.append("🔒 SECURITY ANALYSIS:")
         details.append("-" * 20)
         
-        # Check for specific vulnerabilities
         method = request_data.get('method', '').upper()
         url = request_data.get('url', '').lower()
         body = request_data.get('body', '').lower()
@@ -902,10 +800,8 @@ class CyberT:
         self.request_details_text.insert(1.0, "\n".join(details))
         
     def display_response_details(self, response_data):
-        """Display detailed response information with vulnerability analysis"""
         self.response_details_text.delete(1.0, tk.END)
         
-        # Analyze vulnerability
         vulnerability_level = self.analyze_response_vulnerability(response_data)
         vuln_indicator = self.get_vulnerability_indicator(vulnerability_level)
         
@@ -928,17 +824,14 @@ class CyberT:
         details.append("Body:")
         details.append("-" * 20)
         body = response_data.get('body', 'No body')
-        # Limit body display to prevent UI overflow
         if len(body) > 2000:
             body = body[:2000] + "\n... (truncated)"
         details.append(body)
         
-        # Add vulnerability details
         details.append("")
         details.append("🔒 SECURITY ANALYSIS:")
         details.append("-" * 20)
         
-        # Check for specific vulnerabilities
         status = response_data.get('status', 0)
         headers_lower = {k.lower(): v for k, v in headers.items()}
         body_lower = body.lower()
@@ -946,7 +839,6 @@ class CyberT:
         if status in [500, 501, 502, 503, 504]:
             details.append(f"⚠️  Server error status: {status}")
         
-        # Check for missing security headers
         missing_headers = []
         security_headers = ['x-frame-options', 'x-content-type-options', 'x-xss-protection', 
                            'strict-transport-security', 'content-security-policy']
@@ -957,30 +849,25 @@ class CyberT:
         if missing_headers:
             details.append(f"⚠️  Missing security headers: {', '.join(missing_headers)}")
         
-        # Check for sensitive information
         if any(info in body_lower for info in ['password', 'token', 'key', 'secret']):
             details.append("⚠️  Sensitive information detected in response")
         
-        # Check for debug information
         if 'debug' in body_lower or 'development' in body_lower:
             details.append("⚠️  Debug information exposed")
         
         self.response_details_text.insert(1.0, "\n".join(details))
         
     def forward_request(self):
-        """Forward the selected request"""
         selection = self.requests_listbox.curselection()
         if selection:
             index = selection[0]
             if index < len(self.intercepted_requests):
-                # Remove from intercepted list
                 request_data = self.intercepted_requests.pop(index)
                 self.requests_listbox.delete(index)
                 self.request_details_text.delete(1.0, tk.END)
                 messagebox.showinfo("Success", "Request forwarded successfully")
                 
     def forward_response(self):
-        """Forward the selected response"""
         selection = self.responses_listbox.curselection()
         if selection:
             index = selection[0]
@@ -992,7 +879,6 @@ class CyberT:
                 messagebox.showinfo("Success", "Response forwarded successfully")
                 
     def edit_request(self):
-        """Edit the selected request"""
         selection = self.requests_listbox.curselection()
         if selection:
             index = selection[0]
@@ -1000,7 +886,6 @@ class CyberT:
                 self.open_request_editor(index)
                 
     def edit_response(self):
-        """Edit the selected response"""
         selection = self.responses_listbox.curselection()
         if selection:
             index = selection[0]
@@ -1008,44 +893,35 @@ class CyberT:
                 self.open_response_editor(index)
                 
     def drop_request(self):
-        """Drop the selected request"""
         selection = self.requests_listbox.curselection()
         if selection:
             index = selection[0]
             if index < len(self.intercepted_requests):
-                # Remove from intercepted list
                 self.intercepted_requests.pop(index)
                 self.requests_listbox.delete(index)
                 self.request_details_text.delete(1.0, tk.END)
                 messagebox.showinfo("Success", "Request dropped successfully")
                 
     def drop_response(self):
-        """Drop the selected response"""
         selection = self.responses_listbox.curselection()
         if selection:
             index = selection[0]
             if index < len(self.intercepted_responses):
-                # Remove from intercepted list
                 self.intercepted_responses.pop(index)
                 self.responses_listbox.delete(index)
                 self.response_details_text.delete(1.0, tk.END)
                 messagebox.showinfo("Success", "Response dropped successfully")
                 
     def open_request_editor(self, index):
-        """Open request editor dialog"""
         request_data = self.intercepted_requests[index]
         
-        # Create editor window
         editor = tk.Toplevel(self.root)
         editor.title("Edit Request")
         editor.geometry("800x600")
         editor.configure(bg='#18191A')
         
-        # Request editor content
         ttk.Label(editor, text="Edit HTTP Request", font=('Arial', 14, 'bold')).pack(pady=10)
-        
-        # Method and URL
-        method_frame = ttk.Frame(editor)
+                method_frame = ttk.Frame(editor)
         method_frame.pack(fill='x', padx=10, pady=5)
         
         ttk.Label(method_frame, text="Method:").pack(side='left', padx=(0, 5))
@@ -1059,34 +935,28 @@ class CyberT:
         url_entry = ttk.Entry(method_frame, textvariable=url_var, width=50)
         url_entry.pack(side='left', fill='x', expand=True)
         
-        # Headers
         ttk.Label(editor, text="Headers:", font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
         headers_text = tk.Text(editor, height=8, bg='#2D2D2D', fg='#FFFFFF', font=('Consolas', 9))
         headers_text.pack(fill='x', padx=10, pady=5)
         
-        # Populate headers
         headers = request_data.get('headers', {})
         headers_content = []
         for key, value in headers.items():
             headers_content.append(f"{key}: {value}")
         headers_text.insert(1.0, "\n".join(headers_content))
         
-        # Body
         ttk.Label(editor, text="Body:", font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
         body_text = tk.Text(editor, height=10, bg='#2D2D2D', fg='#FFFFFF', font=('Consolas', 9))
         body_text.pack(fill='both', expand=True, padx=10, pady=5)
         body_text.insert(1.0, request_data.get('body', ''))
         
-        # Buttons
         button_frame = ttk.Frame(editor)
         button_frame.pack(fill='x', padx=10, pady=10)
         
         def save_request():
-            # Update request data
             request_data['method'] = method_var.get()
             request_data['url'] = url_var.get()
             
-            # Parse headers
             headers_content = headers_text.get(1.0, tk.END).strip()
             new_headers = {}
             for line in headers_content.split('\n'):
@@ -1095,10 +965,8 @@ class CyberT:
                     new_headers[key.strip()] = value.strip()
             request_data['headers'] = new_headers
             
-            # Update body
             request_data['body'] = body_text.get(1.0, tk.END).strip()
             
-            # Update display
             self.display_request_details(request_data)
             editor.destroy()
             messagebox.showinfo("Success", "Request updated successfully")
@@ -1107,19 +975,15 @@ class CyberT:
         ttk.Button(button_frame, text="❌ Cancel", command=editor.destroy).pack(side='left', padx=5)
         
     def open_response_editor(self, index):
-        """Open response editor dialog"""
         response_data = self.intercepted_responses[index]
         
-        # Create editor window
         editor = tk.Toplevel(self.root)
         editor.title("Edit Response")
         editor.geometry("800x600")
         editor.configure(bg='#18191A')
         
-        # Response editor content
         ttk.Label(editor, text="Edit HTTP Response", font=('Arial', 14, 'bold')).pack(pady=10)
         
-        # Status
         status_frame = ttk.Frame(editor)
         status_frame.pack(fill='x', padx=10, pady=5)
         
@@ -1128,33 +992,28 @@ class CyberT:
         status_entry = ttk.Entry(status_frame, textvariable=status_var, width=10)
         status_entry.pack(side='left')
         
-        # Headers
         ttk.Label(editor, text="Headers:", font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
         headers_text = tk.Text(editor, height=8, bg='#2D2D2D', fg='#FFFFFF', font=('Consolas', 9))
         headers_text.pack(fill='x', padx=10, pady=5)
         
-        # Populate headers
         headers = response_data.get('headers', {})
         headers_content = []
         for key, value in headers.items():
             headers_content.append(f"{key}: {value}")
         headers_text.insert(1.0, "\n".join(headers_content))
         
-        # Body
         ttk.Label(editor, text="Body:", font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
         body_text = tk.Text(editor, height=10, bg='#2D2D2D', fg='#FFFFFF', font=('Consolas', 9))
         body_text.pack(fill='both', expand=True, padx=10, pady=5)
         body_text.insert(1.0, response_data.get('body', ''))
         
-        # Buttons
+        
         button_frame = ttk.Frame(editor)
         button_frame.pack(fill='x', padx=10, pady=10)
         
         def save_response():
-            # Update response data
             response_data['status'] = int(status_var.get())
             
-            # Parse headers
             headers_content = headers_text.get(1.0, tk.END).strip()
             new_headers = {}
             for line in headers_content.split('\n'):
@@ -1163,10 +1022,8 @@ class CyberT:
                     new_headers[key.strip()] = value.strip()
             response_data['headers'] = new_headers
             
-            # Update body
             response_data['body'] = body_text.get(1.0, tk.END).strip()
             
-            # Update display
             self.display_response_details(response_data)
             editor.destroy()
             messagebox.showinfo("Success", "Response updated successfully")
@@ -1175,7 +1032,6 @@ class CyberT:
         ttk.Button(button_frame, text="❌ Cancel", command=editor.destroy).pack(side='left', padx=5)
         
     def clear_traffic(self):
-        """Clear all intercepted traffic"""
         self.intercepted_requests.clear()
         self.intercepted_responses.clear()
         self.requests_listbox.delete(0, tk.END)
@@ -1184,9 +1040,7 @@ class CyberT:
         self.response_details_text.delete(1.0, tk.END)
         messagebox.showinfo("Success", "All traffic cleared")
         
-    def export_traffic(self):
-        """Export intercepted traffic to file"""
-        if not self.intercepted_requests and not self.intercepted_responses:
+    def export_traffic(self):        if not self.intercepted_requests and not self.intercepted_responses:
             messagebox.showwarning("Warning", "No traffic to export!")
             return
             
@@ -1214,15 +1068,12 @@ class CyberT:
                 messagebox.showerror("Error", f"Failed to export traffic: {str(e)}")
         
     def create_api_tester_tab(self):
-        """Create the API testing tab"""
         api_frame = ttk.Frame(self.notebook)
         self.notebook.add(api_frame, text="⚡ Wolf API Tester")
         
-        # Left panel - API test list
         left_frame = ttk.Frame(api_frame)
         left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
         
-        # API test list header
         list_header = ttk.Frame(left_frame)
         list_header.pack(fill='x', pady=(0, 5))
         
@@ -1232,21 +1083,17 @@ class CyberT:
                                 command=self.load_api_tests)
         refresh_btn.pack(side='right')
         
-        # API test list
         self.api_listbox = tk.Listbox(left_frame, bg='#2D2D2D', fg='#FFFFFF',
                                      selectbackground='#3D3D3D', font=('Arial', 10))
         self.api_listbox.pack(fill='both', expand=True)
         self.api_listbox.bind('<<ListboxSelect>>', self.on_api_test_select)
         
-        # Right panel - API test details
         right_frame = ttk.Frame(api_frame)
         right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
         
-        # API test form
         test_frame = ttk.LabelFrame(right_frame, text="API Test Configuration")
         test_frame.pack(fill='both', expand=True)
         
-        # Form fields
         ttk.Label(test_frame, text="Test Name:").grid(row=0, column=0, sticky='w', pady=5)
         self.test_name_entry = ttk.Entry(test_frame, width=50)
         self.test_name_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(5, 0))
@@ -1275,7 +1122,6 @@ class CyberT:
         self.expected_status_entry = ttk.Entry(test_frame, width=50)
         self.expected_status_entry.grid(row=5, column=1, sticky='ew', pady=5, padx=(5, 0))
         
-        # Buttons
         button_frame = ttk.Frame(test_frame)
         button_frame.grid(row=6, column=0, columnspan=2, pady=10)
         
@@ -1284,7 +1130,6 @@ class CyberT:
         ttk.Button(button_frame, text="🚀 Run Test", command=self.run_api_test).pack(side='left', padx=5)
         ttk.Button(button_frame, text="🗑️ Delete", command=self.delete_api_test).pack(side='left', padx=5)
         
-        # Response area
         response_frame = ttk.LabelFrame(right_frame, text="Response")
         response_frame.pack(fill='both', expand=True, pady=(5, 0))
         
@@ -1295,15 +1140,12 @@ class CyberT:
         test_frame.columnconfigure(1, weight=1)
         
     def create_security_scanner_tab(self):
-        """Create the advanced security scanner tab"""
         scanner_frame = ttk.Frame(self.notebook)
         self.notebook.add(scanner_frame, text="🔍 Security Scanner")
         
-        # Top panel - Configuration
         config_frame = ttk.LabelFrame(scanner_frame, text="Scan Configuration")
         config_frame.pack(fill='x', padx=10, pady=5)
         
-        # URL input
         url_frame = ttk.Frame(config_frame)
         url_frame.pack(fill='x', pady=5)
         
@@ -1312,25 +1154,21 @@ class CyberT:
         self.scan_url_entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
         self.scan_url_entry.insert(0, "https://example.com")
         
-        # Scan options
         options_frame = ttk.Frame(config_frame)
         options_frame.pack(fill='x', pady=5)
         
-        # Thread count
         ttk.Label(options_frame, text="Threads:").pack(side='left', padx=(0, 5))
         self.thread_count_var = tk.StringVar(value="10")
         thread_spinbox = ttk.Spinbox(options_frame, from_=1, to=50, width=5, 
                                     textvariable=self.thread_count_var)
         thread_spinbox.pack(side='left', padx=(0, 20))
         
-        # Timeout
         ttk.Label(options_frame, text="Timeout (s):").pack(side='left', padx=(0, 5))
         self.timeout_var = tk.StringVar(value="5")
         timeout_spinbox = ttk.Spinbox(options_frame, from_=1, to=30, width=5, 
                                      textvariable=self.timeout_var)
         timeout_spinbox.pack(side='left', padx=(0, 20))
         
-        # Scan types
         scan_types_frame = ttk.Frame(config_frame)
         scan_types_frame.pack(fill='x', pady=5)
         
@@ -1345,7 +1183,6 @@ class CyberT:
         ttk.Checkbutton(scan_types_frame, text="Status Code Analysis", 
                        variable=self.status_scan_var).pack(side='left')
         
-        # Control buttons
         control_frame = ttk.Frame(config_frame)
         control_frame.pack(fill='x', pady=10)
         
@@ -1363,19 +1200,15 @@ class CyberT:
         ttk.Button(control_frame, text="🗑️ Clear Results", 
                   command=self.clear_scan_results).pack(side='left')
         
-        # Progress bar
         self.scan_progress = ttk.Progressbar(config_frame, mode='indeterminate')
         self.scan_progress.pack(fill='x', pady=5)
         
-        # Results panel
         results_frame = ttk.LabelFrame(scanner_frame, text="Scan Results")
         results_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Results treeview
         columns = ('Type', 'URL', 'Status', 'Size', 'Response Time', 'Details')
         self.results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=15)
         
-        # Configure columns
         self.results_tree.heading('Type', text='Type')
         self.results_tree.heading('URL', text='URL')
         self.results_tree.heading('Status', text='Status')
@@ -1390,27 +1223,21 @@ class CyberT:
         self.results_tree.column('Response Time', width=100)
         self.results_tree.column('Details', width=200)
         
-        # Scrollbars
         v_scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=self.results_tree.yview)
         h_scrollbar = ttk.Scrollbar(results_frame, orient='horizontal', command=self.results_tree.xview)
         self.results_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Pack treeview and scrollbars
         self.results_tree.pack(side='left', fill='both', expand=True)
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
         
-        # Status label
         self.scan_status_label = ttk.Label(scanner_frame, text="Ready to scan", 
                                           font=('Arial', 10, 'bold'))
         self.scan_status_label.pack(pady=5)
         
-        # Initialize wordlists
         self.init_wordlists()
         
     def init_wordlists(self):
-        """Initialize common wordlists for directory enumeration"""
-        # Load payloads from common.txt file
         self.directory_wordlist = []
         self.file_extensions = []
         self.security_payloads = []
@@ -1420,7 +1247,6 @@ class CyberT:
                 content = f.read()
                 lines = [line.strip() for line in content.split('\n') if line.strip() and not line.startswith('#')]
                 
-                # Separate different types of payloads
                 in_extensions = False
                 in_security = False
                 
@@ -1433,7 +1259,6 @@ class CyberT:
                         self.directory_wordlist.append(line)
                         
         except FileNotFoundError:
-            # Fallback to default wordlist if file not found
             self.directory_wordlist = [
                 'admin', 'administrator', 'api', 'app', 'assets', 'backup', 'bin', 'config',
                 'css', 'data', 'db', 'dev', 'docs', 'download', 'files', 'images', 'img',
@@ -1447,7 +1272,6 @@ class CyberT:
         self.http_methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE']
         
     def start_security_scan(self):
-        """Start the security scan"""
         url = self.scan_url_entry.get().strip()
         if not url:
             messagebox.showerror("Error", "Please enter a target URL!")
@@ -1464,34 +1288,27 @@ class CyberT:
         self.scan_progress.start()
         self.scan_status_label.config(text="🔍 Initializing security scan...")
         
-        # Play start sound for scan touch
         self.play_sound("start")
         
-        # Clear previous results
         for item in self.results_tree.get_children():
             self.results_tree.delete(item)
             
-        # Start scan in separate thread
         threading.Thread(target=self._run_security_scan, args=(url,), daemon=True).start()
         
     def stop_security_scan(self):
-        """Stop the security scan"""
         self.scanning_active = False
         self.start_scan_btn.config(state='normal')
         self.stop_scan_btn.config(state='disabled')
         self.scan_progress.stop()
         self.scan_status_label.config(text="🛑 Scan stopped by user")
         
-        # Play stop sound for scan touch
         self.play_sound("error")
         
     def _run_security_scan(self, base_url):
-        """Run the security scan in separate thread"""
         try:
             parsed_url = urllib.parse.urlparse(base_url)
             base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
             
-            # Test base URL first
             self._test_url(base_url, "Base URL")
             
             if self.directory_scan_var.get():
@@ -1509,7 +1326,6 @@ class CyberT:
             self.root.after(0, self._scan_completed)
             
     def _test_url(self, url, test_type):
-        """Test a single URL"""
         if not self.scanning_active:
             return
             
@@ -1522,7 +1338,6 @@ class CyberT:
             response_time = round((end_time - start_time) * 1000, 2)
             content_length = len(response.content)
             
-            # Determine status color
             status_color = "green" if 200 <= response.status_code < 300 else \
                           "orange" if 300 <= response.status_code < 400 else "red"
             
@@ -1537,7 +1352,6 @@ class CyberT:
             
             self.root.after(0, self._add_scan_result, result)
             
-            # Update progress without sound to reduce lag
             self.scan_progress_count += 1
             if self.scan_progress_count % 10 == 0:
                 self.root.after(0, self._update_scan_progress)
@@ -1554,7 +1368,6 @@ class CyberT:
             self.root.after(0, self._add_scan_result, result)
             
     def _directory_enumeration(self, base_domain):
-        """Perform directory enumeration"""
         thread_count = int(self.thread_count_var.get())
         
         with ThreadPoolExecutor(max_workers=thread_count) as executor:
@@ -1568,7 +1381,6 @@ class CyberT:
                 future = executor.submit(self._test_url, test_url, "Directory")
                 futures.append(future)
                 
-                # Also test with loaded extensions
                 extensions_to_test = ['/'] + self.file_extensions[:10]  # Limit to avoid too many requests
                 for ext in extensions_to_test:
                     if not self.scanning_active:
@@ -1577,13 +1389,11 @@ class CyberT:
                     future = executor.submit(self._test_url, test_url_ext, "Directory")
                     futures.append(future)
                     
-            # Wait for completion
             for future in as_completed(futures):
                 if not self.scanning_active:
                     break
                     
     def _method_testing(self, url):
-        """Test different HTTP methods"""
         thread_count = int(self.thread_count_var.get())
         
         with ThreadPoolExecutor(max_workers=thread_count) as executor:
@@ -1601,7 +1411,6 @@ class CyberT:
                     break
                     
     def _test_http_method(self, url, method):
-        """Test a specific HTTP method"""
         try:
             start_time = time.time()
             
@@ -1648,8 +1457,6 @@ class CyberT:
             self.root.after(0, self._add_scan_result, result)
             
     def _status_analysis(self, url):
-        """Perform status code analysis"""
-        # Test common status code scenarios
         test_cases = [
             (f"{url}/nonexistent", "404 Test"),
             (f"{url}/admin", "Admin Test"),
@@ -1667,8 +1474,6 @@ class CyberT:
             self._test_url(test_url, test_name)
             
     def _add_scan_result(self, result):
-        """Add scan result to treeview"""
-        # Color coding based on status
         if result['status'] == "ERROR":
             tags = ('error',)
         elif isinstance(result['status'], int):
@@ -1690,23 +1495,18 @@ class CyberT:
             result['details']
         ), tags=tags)
         
-        # Configure tag colors
         self.results_tree.tag_configure('success', background='#2D4A2D', foreground='#90EE90')
         self.results_tree.tag_configure('redirect', background='#4A4A2D', foreground='#FFFF90')
         self.results_tree.tag_configure('error', background='#4A2D2D', foreground='#FF9090')
         
-        # Sound removed for each result to reduce lag and improve performance
         
     def _scan_completed(self):
-        """Handle scan completion"""
         self.scanning_active = False
         self.start_scan_btn.config(state='normal')
         self.stop_scan_btn.config(state='disabled')
         self.scan_progress.stop()
         
-        # Count results
         total_results = len(self.results_tree.get_children())
-        # Count successful scans by checking items with 'success' tag
         success_count = 0
         for item in self.results_tree.get_children():
             tags = self.results_tree.item(item, 'tags')
@@ -1715,19 +1515,15 @@ class CyberT:
         
         self.scan_status_label.config(text=f"✅ Scan completed! Found {total_results} results ({success_count} successful)")
         
-        # Completion sound removed to reduce lag
         
-        # Update dashboard
         self.update_dashboard()
         
     def clear_scan_results(self):
-        """Clear all scan results"""
         for item in self.results_tree.get_children():
             self.results_tree.delete(item)
         self.scan_status_label.config(text="Results cleared")
         
     def export_scan_results_pdf(self):
-        """Export scan results to PDF"""
         if not self.results_tree.get_children():
             messagebox.showwarning("Warning", "No scan results to export!")
             return
@@ -1746,7 +1542,6 @@ class CyberT:
                 messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
                 
     def _generate_scan_pdf(self, filename):
-        """Generate PDF report of scan results"""
         doc = SimpleDocTemplate(filename, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
@@ -1765,7 +1560,6 @@ class CyberT:
         story.append(title)
         story.append(Spacer(1, 12))
         
-        # Scan info
         scan_info = f"""
         <b>Scan Target:</b> {self.scan_url_entry.get()}<br/>
         <b>Scan Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
@@ -1783,7 +1577,6 @@ class CyberT:
         story.append(Paragraph(scan_info, info_style))
         story.append(Spacer(1, 12))
         
-        # Results table
         data = [['Type', 'URL', 'Status', 'Size', 'Response Time', 'Details']]
         
         for item in self.results_tree.get_children():
@@ -1806,7 +1599,6 @@ class CyberT:
         
         story.append(table)
         
-        # Footer
         story.append(Spacer(1, 20))
         footer = Paragraph(
             f"<i>Generated by Cyber-T Advanced Security Tool<br/>"
@@ -1819,15 +1611,12 @@ class CyberT:
         doc.build(story)
     
     def create_source_code_analyzer_tab(self):
-        """Create the source code analyzer and vulnerability scanner tab"""
         analyzer_frame = ttk.Frame(self.notebook)
         self.notebook.add(analyzer_frame, text="💻 Code Analyzer")
         
-        # Top panel - File Upload
         upload_frame = ttk.LabelFrame(analyzer_frame, text="📁 File Upload & Analysis")
         upload_frame.pack(fill='x', padx=10, pady=5)
         
-        # File upload section
         upload_controls = ttk.Frame(upload_frame)
         upload_controls.pack(fill='x', pady=5)
         
@@ -1838,11 +1627,9 @@ class CyberT:
         ttk.Button(upload_controls, text="🗑️ Clear Files", 
                   command=self.clear_uploaded_files).pack(side='left', padx=5)
         
-        # Analysis options
         options_frame = ttk.LabelFrame(upload_frame, text="🔧 Analysis Options")
         options_frame.pack(fill='x', pady=5)
         
-        # Checkboxes for analysis types
         self.analyze_sql_injection = tk.BooleanVar(value=True)
         self.analyze_xss = tk.BooleanVar(value=True)
         self.analyze_command_injection = tk.BooleanVar(value=True)
@@ -1854,7 +1641,6 @@ class CyberT:
         self.analyze_memory_leak = tk.BooleanVar(value=True)
         self.analyze_deserialization = tk.BooleanVar(value=True)
         
-        # Left column
         left_col = ttk.Frame(options_frame)
         left_col.pack(side='left', fill='both', expand=True, padx=5)
         
@@ -1869,7 +1655,6 @@ class CyberT:
         ttk.Checkbutton(left_col, text="Hardcoded Secrets", 
                        variable=self.analyze_hardcoded_secrets).pack(anchor='w')
         
-        # Right column
         right_col = ttk.Frame(options_frame)
         right_col.pack(side='right', fill='both', expand=True, padx=5)
         
@@ -1884,7 +1669,6 @@ class CyberT:
         ttk.Checkbutton(right_col, text="Insecure Deserialization", 
                        variable=self.analyze_deserialization).pack(anchor='w')
         
-        # Analysis controls
         controls_frame = ttk.Frame(upload_frame)
         controls_frame.pack(fill='x', pady=5)
         
@@ -1897,19 +1681,15 @@ class CyberT:
         ttk.Button(controls_frame, text="🗑️ Clear Results", 
                   command=self.clear_analysis_results).pack(side='left', padx=5)
         
-        # Progress bar
         self.analysis_progress = ttk.Progressbar(upload_frame, mode='indeterminate')
         self.analysis_progress.pack(fill='x', pady=5)
         
-        # Status label
         self.analysis_status_label = ttk.Label(upload_frame, text="Ready to analyze source code")
         self.analysis_status_label.pack(pady=2)
         
-        # File list
         file_list_frame = ttk.LabelFrame(analyzer_frame, text="📋 Uploaded Files")
         file_list_frame.pack(fill='x', padx=10, pady=5)
         
-        # File listbox with scrollbar
         file_list_container = ttk.Frame(file_list_frame)
         file_list_container.pack(fill='both', expand=True, padx=5, pady=5)
         
@@ -1921,19 +1701,15 @@ class CyberT:
         self.uploaded_files_listbox.pack(side='left', fill='both', expand=True)
         file_scrollbar.pack(side='right', fill='y')
         
-        # Results panel
         results_frame = ttk.LabelFrame(analyzer_frame, text="🔍 Analysis Results")
         results_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Results treeview
         tree_frame = ttk.Frame(results_frame)
         tree_frame.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # Treeview columns
         columns = ('File', 'Vulnerability', 'Severity', 'Line', 'Description')
         self.analysis_results_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
         
-        # Configure columns
         self.analysis_results_tree.heading('File', text='File')
         self.analysis_results_tree.heading('Vulnerability', text='Vulnerability Type')
         self.analysis_results_tree.heading('Severity', text='Severity')
@@ -1946,7 +1722,6 @@ class CyberT:
         self.analysis_results_tree.column('Line', width=80)
         self.analysis_results_tree.column('Description', width=300)
         
-        # Scrollbars for treeview
         tree_scrollbar_y = ttk.Scrollbar(tree_frame, orient='vertical', 
                                        command=self.analysis_results_tree.yview)
         tree_scrollbar_x = ttk.Scrollbar(tree_frame, orient='horizontal', 
@@ -1954,22 +1729,18 @@ class CyberT:
         self.analysis_results_tree.configure(yscrollcommand=tree_scrollbar_y.set,
                                            xscrollcommand=tree_scrollbar_x.set)
         
-        # Pack treeview and scrollbars
         self.analysis_results_tree.pack(side='left', fill='both', expand=True)
         tree_scrollbar_y.pack(side='right', fill='y')
         tree_scrollbar_x.pack(side='bottom', fill='x')
         
-        # Configure tag colors for severity
         self.analysis_results_tree.tag_configure('CRITICAL', background='#4A1A1A', foreground='#FF6B6B')
         self.analysis_results_tree.tag_configure('HIGH', background='#4A2D1A', foreground='#FFB366')
         self.analysis_results_tree.tag_configure('MEDIUM', background='#4A4A1A', foreground='#FFFF66')
         self.analysis_results_tree.tag_configure('LOW', background='#2D4A2D', foreground='#66FF66')
         
-        # Initialize analysis state
         self.analysis_active = False
     
     def upload_source_files(self):
-        """Upload source code files for analysis"""
         file_types = [
             ('All Source Files', '*.py *.js *.php *.java *.cpp *.c *.cs *.rb *.go *.rs *.ts *.jsx *.tsx'),
             ('Python Files', '*.py'),
@@ -2000,7 +1771,6 @@ class CyberT:
             self.play_sound("start")
     
     def upload_source_folder(self):
-        """Upload entire folder of source code files"""
         folder_path = filedialog.askdirectory(title="Select folder containing source code")
         
         if folder_path:
@@ -2025,14 +1795,12 @@ class CyberT:
                 self.play_sound("error")
     
     def clear_uploaded_files(self):
-        """Clear all uploaded files"""
         self.uploaded_files.clear()
         self.uploaded_files_listbox.delete(0, tk.END)
         self.analysis_status_label.config(text="🗑️ All files cleared")
         self.play_sound("error")
     
     def start_code_analysis(self):
-        """Start vulnerability analysis of uploaded source code"""
         if not self.uploaded_files:
             messagebox.showerror("Error", "Please upload source code files first!")
             return
@@ -2059,25 +1827,20 @@ class CyberT:
         self.analysis_progress.start()
         self.analysis_status_label.config(text="🔍 Analyzing source code for vulnerabilities...")
         
-        # Play start sound
         self.play_sound("start")
         
-        # Clear previous results
         for item in self.analysis_results_tree.get_children():
             self.analysis_results_tree.delete(item)
         
-        # Start analysis in separate thread
         threading.Thread(target=self._run_code_analysis, daemon=True).start()
     
     def stop_code_analysis(self):
-        """Stop the code analysis"""
         self.analysis_active = False
         self.analysis_progress.stop()
         self.analysis_status_label.config(text="🛑 Analysis stopped by user")
         self.play_sound("error")
     
     def _run_code_analysis(self):
-        """Run vulnerability analysis in separate thread"""
         try:
             total_files = len(self.uploaded_files)
             processed_files = 0
@@ -2087,14 +1850,11 @@ class CyberT:
                     break
                 
                 try:
-                    # Read file content
                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                         content = f.read()
                     
-                    # Analyze file for vulnerabilities
                     vulnerabilities = self._analyze_file_content(file_path, content)
                     
-                    # Add results to treeview
                     for vuln in vulnerabilities:
                         self.root.after(0, self._add_analysis_result, vuln)
                         self.play_sound("scan_progress")
@@ -2109,7 +1869,6 @@ class CyberT:
                     print(f"Error analyzing file {file_path}: {e}")
                     continue
             
-            # Analysis completed
             self.root.after(0, self._analysis_completed)
             
         except Exception as e:
@@ -2120,12 +1879,10 @@ class CyberT:
             self.root.after(0, lambda: self.analysis_progress.stop())
     
     def _analyze_file_content(self, file_path, content):
-        """Analyze file content for vulnerabilities"""
         vulnerabilities = []
         lines = content.split('\n')
         filename = os.path.basename(file_path)
         
-        # Get selected analysis options
         analysis_options = {
             'sql_injection': self.analyze_sql_injection.get(),
             'xss': self.analyze_xss.get(),
@@ -2165,7 +1922,6 @@ class CyberT:
         return vulnerabilities
     
     def _add_analysis_result(self, vulnerability):
-        """Add vulnerability result to treeview"""
         tags = (vulnerability['severity'],)
         item = self.analysis_results_tree.insert('', 'end', values=(
             vulnerability['file'],
@@ -2176,10 +1932,8 @@ class CyberT:
         ), tags=tags)
     
     def _analysis_completed(self):
-        """Handle analysis completion"""
         total_vulnerabilities = len(self.analysis_results_tree.get_children())
         
-        # Count vulnerabilities by severity
         severity_counts = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
         for item in self.analysis_results_tree.get_children():
             severity = self.analysis_results_tree.item(item, 'values')[2]
@@ -2194,14 +1948,12 @@ class CyberT:
         self.play_sound("complete")
     
     def clear_analysis_results(self):
-        """Clear all analysis results"""
         for item in self.analysis_results_tree.get_children():
             self.analysis_results_tree.delete(item)
         self.analysis_status_label.config(text="🗑️ Analysis results cleared")
         self.play_sound("error")
     
     def export_analysis_report(self):
-        """Export analysis results to PDF report"""
         if not self.analysis_results_tree.get_children():
             messagebox.showwarning("Warning", "No analysis results to export!")
             return
@@ -2222,12 +1974,10 @@ class CyberT:
                 self.play_sound("error")
     
     def _generate_analysis_pdf(self, filename):
-        """Generate PDF report for analysis results"""
         doc = SimpleDocTemplate(filename, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
         
-        # Title
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
@@ -2238,7 +1988,6 @@ class CyberT:
         title = Paragraph("Cyber-T Source Code Analysis Report", title_style)
         story.append(title)
         
-        # Summary
         total_vulnerabilities = len(self.analysis_results_tree.get_children())
         severity_counts = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
         
@@ -2270,11 +2019,9 @@ class CyberT:
         story.append(summary_table)
         story.append(Spacer(1, 20))
         
-        # Detailed results
         story.append(Paragraph("Detailed Vulnerability Analysis", styles['Heading2']))
         story.append(Spacer(1, 12))
         
-        # Get all results
         results_data = [['File', 'Vulnerability', 'Severity', 'Line', 'Description']]
         
         for item in self.analysis_results_tree.get_children():
@@ -2302,7 +2049,6 @@ class CyberT:
         ]))
         story.append(results_table)
         
-        # Footer
         story.append(Spacer(1, 30))
         footer = Paragraph(
             f"<i>Report generated by Cyber-T on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>",
@@ -2313,7 +2059,6 @@ class CyberT:
         doc.build(story)
     
     def open_community_support(self):
-        """Open community support website"""
         try:
             webbrowser.open("https://cyber-chat-tamilselvan.web.app/")
             self.play_sound("start")
@@ -2322,7 +2067,6 @@ class CyberT:
             self.play_sound("error")
     
     def open_cyber_chat(self):
-        """Open Cyber Chat website"""
         try:
             webbrowser.open("https://cyber-chat-tamilselvan.web.app/")
             self.play_sound("start")
@@ -2331,15 +2075,12 @@ class CyberT:
             self.play_sound("error")
     
     def create_network_analysis_tab(self):
-        """Create the network analysis tab"""
         network_frame = ttk.Frame(self.notebook)
         self.notebook.add(network_frame, text="🌐 Network Analysis")
         
-        # Input panel
         input_frame = ttk.LabelFrame(network_frame, text="Target Information")
         input_frame.pack(fill='x', padx=10, pady=5)
         
-        # URL/Domain input
         url_frame = ttk.Frame(input_frame)
         url_frame.pack(fill='x', pady=5)
         
@@ -2348,7 +2089,6 @@ class CyberT:
         self.network_target_entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
         self.network_target_entry.insert(0, "google.com")
         
-        # Analysis options
         options_frame = ttk.Frame(input_frame)
         options_frame.pack(fill='x', pady=5)
         
@@ -2357,9 +2097,7 @@ class CyberT:
         timeout_spinbox = ttk.Spinbox(options_frame, from_=5, to=60, width=5, 
                                      textvariable=self.network_timeout_var)
         timeout_spinbox.pack(side='left', padx=(0, 20))
-        
-        # Analysis buttons
-        button_frame = ttk.Frame(input_frame)
+                button_frame = ttk.Frame(input_frame)
         button_frame.pack(fill='x', pady=5)
         
         ttk.Button(button_frame, text="🔍 DNS Lookup", 
@@ -2373,15 +2111,12 @@ class CyberT:
         ttk.Button(button_frame, text="📄 Export PDF", 
                   command=self.export_network_analysis_pdf).pack(side='left', padx=(0, 5))
         
-        # Results panel
         results_frame = ttk.LabelFrame(network_frame, text="Analysis Results")
         results_frame.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Create notebook for different analysis types
         self.network_notebook = ttk.Notebook(results_frame)
         self.network_notebook.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # DNS Results tab
         dns_frame = ttk.Frame(self.network_notebook)
         self.network_notebook.add(dns_frame, text="DNS Records")
         
@@ -2392,7 +2127,6 @@ class CyberT:
         self.dns_results_text.pack(side='left', fill='both', expand=True)
         dns_scrollbar.pack(side='right', fill='y')
         
-        # IP Analysis tab
         ip_frame = ttk.Frame(self.network_notebook)
         self.network_notebook.add(ip_frame, text="IP Analysis")
         
@@ -2403,7 +2137,6 @@ class CyberT:
         self.ip_results_text.pack(side='left', fill='both', expand=True)
         ip_scrollbar.pack(side='right', fill='y')
         
-        # WHOIS tab
         whois_frame = ttk.Frame(self.network_notebook)
         self.network_notebook.add(whois_frame, text="WHOIS Info")
         
@@ -2414,7 +2147,6 @@ class CyberT:
         self.whois_results_text.pack(side='left', fill='both', expand=True)
         whois_scrollbar.pack(side='right', fill='y')
         
-        # Traceroute tab
         traceroute_frame = ttk.Frame(self.network_notebook)
         self.network_notebook.add(traceroute_frame, text="Traceroute")
         
@@ -2426,7 +2158,6 @@ class CyberT:
         traceroute_scrollbar.pack(side='right', fill='y')
         
     def perform_dns_lookup(self):
-        """Perform comprehensive DNS lookup"""
         target = self.network_target_entry.get().strip()
         if not target:
             messagebox.showerror("Error", "Please enter a domain name!")
@@ -2435,7 +2166,6 @@ class CyberT:
         threading.Thread(target=self._dns_lookup_thread, args=(target,), daemon=True).start()
         
     def _dns_lookup_thread(self, domain):
-        """Perform DNS lookup in separate thread"""
         try:
             results = []
             results.append(f"🔍 DNS Lookup Results for: {domain}")
@@ -2459,7 +2189,6 @@ class CyberT:
                 results.append(f"❌ A Records: {str(e)}")
                 results.append("")
             
-            # AAAA Records
             try:
                 aaaa_records = dns.resolver.resolve(domain, 'AAAA')
                 results.append("📋 AAAA Records (IPv6):")
@@ -2470,7 +2199,6 @@ class CyberT:
                 results.append(f"❌ AAAA Records: {str(e)}")
                 results.append("")
             
-            # MX Records
             try:
                 mx_records = dns.resolver.resolve(domain, 'MX')
                 results.append("📧 MX Records (Mail):")
@@ -2481,7 +2209,6 @@ class CyberT:
                 results.append(f"❌ MX Records: {str(e)}")
                 results.append("")
             
-            # NS Records
             try:
                 ns_records = dns.resolver.resolve(domain, 'NS')
                 results.append("🌐 NS Records (Name Servers):")
@@ -2492,7 +2219,6 @@ class CyberT:
                 results.append(f"❌ NS Records: {str(e)}")
                 results.append("")
             
-            # TXT Records
             try:
                 txt_records = dns.resolver.resolve(domain, 'TXT')
                 results.append("📝 TXT Records:")
@@ -2503,7 +2229,6 @@ class CyberT:
                 results.append(f"❌ TXT Records: {str(e)}")
                 results.append("")
             
-            # CNAME Records
             try:
                 cname_records = dns.resolver.resolve(domain, 'CNAME')
                 results.append("🔗 CNAME Records:")
@@ -2521,13 +2246,11 @@ class CyberT:
             self.root.after(0, self._update_dns_results, error_msg)
             
     def _update_dns_results(self, results):
-        """Update DNS results in main thread"""
         self.dns_results_text.delete(1.0, tk.END)
         self.dns_results_text.insert(1.0, results)
         self.network_notebook.select(0)  # Switch to DNS tab
         
     def perform_ip_lookup(self):
-        """Perform IP geolocation lookup"""
         target = self.network_target_entry.get().strip()
         if not target:
             messagebox.showerror("Error", "Please enter an IP address or domain!")
@@ -2536,7 +2259,6 @@ class CyberT:
         threading.Thread(target=self._ip_lookup_thread, args=(target,), daemon=True).start()
         
     def _ip_lookup_thread(self, target):
-        """Perform IP lookup in separate thread"""
         try:
             results = []
             results.append(f"📍 IP Analysis for: {target}")
@@ -2556,7 +2278,6 @@ class CyberT:
                     self.root.after(0, self._update_ip_results, "\n".join(results))
                     return
             
-            # Basic IP information
             try:
                 ip_obj = ipaddress.ip_address(ip_address)
                 results.append(f"📊 IP Information:")
@@ -2570,7 +2291,6 @@ class CyberT:
                 results.append(f"❌ IP Analysis Error: {str(e)}")
                 results.append("")
             
-            # Port scan (common ports)
             results.append("🔍 Port Scan (Common Ports):")
             common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 8080, 8443]
             open_ports = []
@@ -2602,13 +2322,11 @@ class CyberT:
             self.root.after(0, self._update_ip_results, error_msg)
             
     def _update_ip_results(self, results):
-        """Update IP results in main thread"""
         self.ip_results_text.delete(1.0, tk.END)
         self.ip_results_text.insert(1.0, results)
         self.network_notebook.select(1)  # Switch to IP tab
         
     def perform_whois_lookup(self):
-        """Perform WHOIS lookup"""
         target = self.network_target_entry.get().strip()
         if not target:
             messagebox.showerror("Error", "Please enter a domain name!")
@@ -2617,7 +2335,6 @@ class CyberT:
         threading.Thread(target=self._whois_lookup_thread, args=(target,), daemon=True).start()
         
     def _whois_lookup_thread(self, domain):
-        """Perform WHOIS lookup in separate thread with enhanced error handling"""
         try:
             results = []
             results.append(f"📋 WHOIS Information for: {domain}")
@@ -2631,20 +2348,17 @@ class CyberT:
             return None
             
     def _basic_domain_lookup(self, domain):
-        """Basic domain information lookup"""
         try:
             import socket
             
             info = []
             
-            # Try to resolve domain to IP
             try:
                 ip = socket.gethostbyname(domain)
                 info.append(f"IP Address: {ip}")
             except socket.gaierror:
                 info.append("IP Address: Could not resolve")
             
-            # Check if domain responds to HTTP
             try:
                 import urllib.request
                 urllib.request.urlopen(f"http://{domain}", timeout=5)
@@ -2652,7 +2366,6 @@ class CyberT:
             except:
                 info.append("HTTP: Not accessible")
             
-            # Check if domain responds to HTTPS
             try:
                 import urllib.request
                 urllib.request.urlopen(f"https://{domain}", timeout=5)
@@ -2666,13 +2379,11 @@ class CyberT:
             return None
             
     def _update_whois_results(self, results):
-        """Update WHOIS results in main thread"""
         self.whois_results_text.delete(1.0, tk.END)
         self.whois_results_text.insert(1.0, "\n".join(results))
         self.network_notebook.select(2)  # Switch to WHOIS tab
         
     def perform_traceroute(self):
-        """Perform traceroute"""
         target = self.network_target_entry.get().strip()
         if not target:
             messagebox.showerror("Error", "Please enter a domain or IP address!")
@@ -2681,7 +2392,6 @@ class CyberT:
         threading.Thread(target=self._traceroute_thread, args=(target,), daemon=True).start()
         
     def _traceroute_thread(self, target):
-        """Perform traceroute in separate thread"""
         try:
             results = []
             results.append(f"📡 Traceroute to: {target}")
@@ -2689,7 +2399,6 @@ class CyberT:
             results.append(f"⏰ Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             results.append("")
             
-            # Use system traceroute command
             import platform
             system = platform.system().lower()
             
@@ -2728,13 +2437,11 @@ class CyberT:
             self.root.after(0, self._update_traceroute_results, error_msg)
             
     def _update_traceroute_results(self, results):
-        """Update traceroute results in main thread"""
         self.traceroute_results_text.delete(1.0, tk.END)
         self.traceroute_results_text.insert(1.0, results)
         self.network_notebook.select(3)  # Switch to Traceroute tab
         
     def _is_valid_ip(self, ip_string):
-        """Check if string is a valid IP address"""
         try:
             ipaddress.ip_address(ip_string)
             return True
@@ -2742,7 +2449,6 @@ class CyberT:
             return False
             
     def _get_service_name(self, port):
-        """Get service name for port number"""
         services = {
             21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
             80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS",
@@ -2751,7 +2457,6 @@ class CyberT:
         return services.get(port, "Unknown")
         
     def export_network_analysis_pdf(self):
-        """Export network analysis results to PDF"""
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
@@ -2766,7 +2471,6 @@ class CyberT:
                 messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
                 
     def _generate_network_analysis_pdf(self, filename):
-        """Generate PDF report of network analysis"""
         doc = SimpleDocTemplate(filename, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
@@ -2778,14 +2482,13 @@ class CyberT:
             fontSize=18,
             spaceAfter=30,
             textColor=colors.red,
-            alignment=1  # Center alignment
+            alignment=1 
         )
         
         title = Paragraph("Cyber-T Network Analysis Report", title_style)
         story.append(title)
         story.append(Spacer(1, 12))
         
-        # Target info
         target = self.network_target_entry.get()
         target_info = f"""
         <b>Target:</b> {target}<br/>
@@ -2803,7 +2506,6 @@ class CyberT:
         story.append(Paragraph(target_info, info_style))
         story.append(Spacer(1, 12))
         
-        # Add each analysis section
         sections = [
             ("DNS Records", self.dns_results_text),
             ("IP Analysis", self.ip_results_text),
@@ -2814,7 +2516,6 @@ class CyberT:
         for section_name, text_widget in sections:
             content = text_widget.get(1.0, tk.END).strip()
             if content:
-                # Section header
                 section_style = ParagraphStyle(
                     'SectionHeader',
                     parent=styles['Heading2'],
@@ -2825,7 +2526,6 @@ class CyberT:
                 
                 story.append(Paragraph(section_name, section_style))
                 
-                # Section content
                 content_style = ParagraphStyle(
                     'SectionContent',
                     parent=styles['Normal'],
@@ -2834,12 +2534,10 @@ class CyberT:
                     spaceAfter=20
                 )
                 
-                # Replace special characters for PDF
                 content = content.replace('<', '&lt;').replace('>', '&gt;')
                 story.append(Paragraph(content.replace('\n', '<br/>'), content_style))
                 story.append(Spacer(1, 12))
         
-        # Footer
         footer = Paragraph(
             f"<i>Generated by Cyber-T Advanced Security Tool<br/>"
             f"Developed by S.Tamilselvan - Cyber Security Researcher<br/>"
@@ -2851,15 +2549,12 @@ class CyberT:
         doc.build(story)
         
     def create_dashboard_tab(self):
-        """Create the dashboard tab"""
         dashboard_frame = ttk.Frame(self.notebook)
         self.notebook.add(dashboard_frame, text="📊 Dashboard")
         
-        # Stats frame
         stats_frame = ttk.LabelFrame(dashboard_frame, text="Statistics")
         stats_frame.pack(fill='x', padx=10, pady=5)
         
-        # Create stats labels
         stats_grid = ttk.Frame(stats_frame)
         stats_grid.pack(fill='x', padx=10, pady=10)
         
@@ -2887,7 +2582,6 @@ class CyberT:
                                                font=('Arial', 12))
         self.successful_scans_label.grid(row=1, column=2, padx=20, pady=5)
         
-        # Community Support Section
         community_frame = ttk.LabelFrame(dashboard_frame, text="🌐 Community & Support")
         community_frame.pack(fill='x', padx=10, pady=5)
         
@@ -2907,11 +2601,9 @@ class CyberT:
 
         self.play_sound("start")
             
-        # Run test in separate thread
         threading.Thread(target=self._run_api_test_thread, args=(test,), daemon=True).start()
         
     def _run_api_test_thread(self, test):
-        """Run API test in separate thread"""
         try:
             method = test[2]
             url = test[3]
@@ -2919,13 +2611,12 @@ class CyberT:
             body = test[5] or ""
             expected_status = test[6]
             
-            # Parse headers
+            
             try:
                 headers = json.loads(headers_str) if headers_str else {}
             except json.JSONDecodeError:
                 headers = {}
                 
-            # Make request
             start_time = time.time()
             
             if method.upper() == "GET":
@@ -2944,7 +2635,6 @@ class CyberT:
             end_time = time.time()
             response_time = (end_time - start_time) * 1000  # Convert to milliseconds
             
-            # Format response
             result = {
                 "status_code": response.status_code,
                 "response_time_ms": round(response_time, 2),
@@ -2952,10 +2642,8 @@ class CyberT:
                 "content": response.text[:1000] + "..." if len(response.text) > 1000 else response.text
             }
             
-            # Update UI in main thread
             self.root.after(0, self._update_response_display, result, expected_status)
             
-            # Update database
             conn = self.db_manager.get_connection()
             cursor = conn.cursor()
             cursor.execute('''
@@ -2968,7 +2656,6 @@ class CyberT:
             self.root.after(0, self._update_response_display, error_result, None)
             
     def _update_response_display(self, result, expected_status):
-        """Update response display in main thread"""
         self.response_text.delete(1.0, tk.END)
         
         if "error" in result:
@@ -2981,33 +2668,27 @@ class CyberT:
             self.response_text.insert(tk.END, f"📄 Content:\n{result['content']}\n")
             
     def update_dashboard(self):
-        """Update dashboard statistics"""
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         
-        # API test stats
         cursor.execute("SELECT COUNT(*) FROM api_tests")
         total_api_tests = cursor.fetchone()[0]
         
-        # Proxy stats
         proxy_status = "Running" if self.proxy_running else "Stopped"
         intercepted_requests = len(self.intercepted_requests)
         intercepted_responses = len(self.intercepted_responses)
         
-        # Scan stats
         scan_results = 0
         successful_scans = 0
         
         if hasattr(self, 'results_tree'):
             scan_results = len(self.results_tree.get_children())
-            # Count successful scans by checking items with 'success' tag
             successful_scans = 0
             for item in self.results_tree.get_children():
                 tags = self.results_tree.item(item, 'tags')
                 if 'success' in tags:
                     successful_scans += 1
         
-        # Update labels
         self.proxy_status_label.config(text=f"Proxy: {proxy_status}")
         self.intercepted_requests_label.config(text=f"Requests: {intercepted_requests}")
         self.intercepted_responses_label.config(text=f"Responses: {intercepted_responses}")
@@ -3015,7 +2696,6 @@ class CyberT:
         self.scan_results_label.config(text=f"Scan Results: {scan_results}")
         self.successful_scans_label.config(text=f"Successful: {successful_scans}")
         
-        # Update activity log
         self.activity_text.delete(1.0, tk.END)
         self.activity_text.insert(tk.END, f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Dashboard updated\n")
         self.activity_text.insert(tk.END, f"🔄 Proxy: {proxy_status} | Requests: {intercepted_requests} | Responses: {intercepted_responses}\n")
@@ -3024,16 +2704,13 @@ class CyberT:
         self.activity_text.insert(tk.END, f"🛡️ Cyber-T Advanced Security Tool - Ready for action!\n")
         
     def run(self):
-        """Start the application"""
         self.root.mainloop()
         
     def __del__(self):
-        """Cleanup database connection"""
         if hasattr(self, 'db_manager'):
             self.db_manager.close_all()
 
-class ProxyServer(socketserver.ThreadingMixIn, HTTPServer):
-    """HTTP Proxy Server for intercepting traffic"""
+class ProxyServer(socketserver.ThreadingMixIn, HTTPServer):    
     allow_reuse_address = True
     
     def __init__(self, server_address, RequestHandlerClass, cyber_t_app):
@@ -3041,17 +2718,11 @@ class ProxyServer(socketserver.ThreadingMixIn, HTTPServer):
         self.cyber_t_app = cyber_t_app
 
 class ProxyHandler(BaseHTTPRequestHandler):
-    """HTTP Proxy Handler for intercepting and processing requests"""
     
     def __init__(self, request, client_address, server):
         self.cyber_t_app = server.cyber_t_app
         super().__init__(request, client_address, server)
-    
-    def do_CONNECT(self):
-        """Handle HTTPS CONNECT requests"""
-        # For HTTPS, we need to establish a tunnel
-        sel"
-        pass
+   
 
 if __name__ == "__main__":
     app = CyberT()
